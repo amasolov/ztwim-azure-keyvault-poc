@@ -182,6 +182,70 @@ secrets, no API keys, no long-lived credentials.
   to Azure endpoints, and Azure must be able to reach the OIDC Discovery
   Provider route. See [Network Requirements](docs/network-requirements.md).
 
+## Quick Start: demo.redhat.com + Personal Azure Account
+
+If you're running this on a **demo.redhat.com** OpenShift environment (AWS)
+with your own Azure subscription, the setup is streamlined because the cluster
+already has publicly trusted TLS and a public `*.apps` domain.
+
+### 1. Prerequisites
+
+```bash
+# Azure: log in and verify permissions
+az login
+az account show -o table
+
+# OpenShift: log in to the demo cluster (credentials from provisioning email)
+oc login --server=https://api.<cluster-domain>:6443 -u <user> -p <password>
+```
+
+### 2. Clone and configure
+
+```bash
+git clone https://github.com/amasolov/ztwim-azure-keyvault-poc.git
+cd ztwim-azure-keyvault-poc
+
+# Get the cluster's apps domain automatically
+CLUSTER_DOMAIN=$(oc get ingress.config.openshift.io cluster -o jsonpath='{.spec.domain}')
+CLUSTER_NAME=$(oc get infrastructure cluster -o jsonpath='{.status.infrastructureName}' | cut -d'-' -f1)
+echo "Cluster domain: $CLUSTER_DOMAIN"
+echo "Cluster name:   $CLUSTER_NAME"
+
+# Replace placeholders in manifests
+sed -i.bak "s/<your-cluster-domain>/${CLUSTER_DOMAIN}/g" 02-spire-components/*.yaml
+sed -i.bak "s/<your-cluster-name>/${CLUSTER_NAME}/g" 02-spire-components/*.yaml
+rm -f 02-spire-components/*.yaml.bak
+```
+
+### 3. Run
+
+```bash
+./scripts/00-check-prereqs.sh      # Verify everything is ready
+./scripts/01-install-operator.sh   # Install ZTWIM operator (~2 min)
+./scripts/02-deploy-spire.sh       # Deploy SPIRE components (~3 min)
+./scripts/03-azure-setup.sh        # Create Azure Key Vault + federation (~2 min)
+./scripts/04-deploy-demo.sh        # Deploy demo workload (~2 min)
+./scripts/05-verify.sh             # Verify end-to-end
+```
+
+### 4. Demo
+
+```bash
+# Get the pod name
+POD=$(oc get pods -n poc-akv-demo -l app=keyvault-demo -o jsonpath='{.items[0].metadata.name}')
+
+# Fetch a secret from Azure Key Vault using SPIFFE identity (no credentials!)
+oc exec -it $POD -n poc-akv-demo -- python /opt/app-root/src/fetch-kv-secrets.py secret1
+oc exec -it $POD -n poc-akv-demo -- python /opt/app-root/src/fetch-kv-secrets.py db-password
+oc exec -it $POD -n poc-akv-demo -- python /opt/app-root/src/list-kv-secrets.py
+```
+
+### 5. Cleanup
+
+```bash
+./scripts/99-cleanup.sh   # Removes OpenShift and Azure resources
+```
+
 ## References
 
 - [OCP 4.22: Zero Trust Workload Identity Manager](https://docs.redhat.com/en/documentation/openshift_container_platform/4.22/html/security_and_compliance/zero-trust-workload-identity-manager)
