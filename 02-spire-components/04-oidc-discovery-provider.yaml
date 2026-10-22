@@ -6,22 +6,23 @@
 #
 # Options for TLS:
 # 1. Use externalSecretRef to provide a cert from a trusted CA (e.g. Let's Encrypt)
-# 2. If the cluster's default ingress cert is from a public CA, managedRoute: true
+# 2. If the cluster's default ingress cert is from a public CA, managedRoute: "true"
 #    with default edge termination is sufficient.
 #
 # See docs/tls-certificate-options.md for detailed guidance.
 #
-# >>> Replace <your-cluster-domain> <<<
+# >>> Replace <your-apps-domain> with your cluster's apps domain <<<
 apiVersion: operator.openshift.io/v1alpha1
 kind: SpireOIDCDiscoveryProvider
 metadata:
   name: cluster
 spec:
   # Must match SpireServer jwtIssuer
-  jwtIssuer: "https://oidc-discovery.apps.<your-cluster-domain>"
-  replicas: 1
+  jwtIssuer: "https://oidc-discovery.<your-apps-domain>"
+  replicaCount: 1
   # Auto-create an OpenShift Route for the OIDC endpoint
-  managedRoute: true
+  # NOTE: must be a string "true", not a boolean
+  managedRoute: "true"
   # Optional: reference a TLS secret from a public CA if the default ingress cert
   # is not publicly trusted. Uncomment and adjust if needed.
   # externalSecretRef: "oidc-tls-cert"

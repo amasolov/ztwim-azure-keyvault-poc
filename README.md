@@ -212,7 +212,7 @@ echo "Cluster domain: $CLUSTER_DOMAIN"
 echo "Cluster name:   $CLUSTER_NAME"
 
 # Replace placeholders in manifests
-sed -i.bak "s/<your-cluster-domain>/${CLUSTER_DOMAIN}/g" 02-spire-components/*.yaml
+sed -i.bak "s/<your-apps-domain>/${CLUSTER_DOMAIN}/g" 02-spire-components/*.yaml
 sed -i.bak "s/<your-cluster-name>/${CLUSTER_NAME}/g" 02-spire-components/*.yaml
 rm -f 02-spire-components/*.yaml.bak
 ```

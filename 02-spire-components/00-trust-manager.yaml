@@ -1,0 +1,13 @@
+# ZeroTrustWorkloadIdentityManager: the parent CR that configures the
+# trust domain, cluster name, and bundle ConfigMap. Must be created first.
+#
+# >>> Replace <your-apps-domain> with your cluster's apps domain <<<
+# >>> Replace <your-cluster-name> with your cluster name <<<
+apiVersion: operator.openshift.io/v1alpha1
+kind: ZeroTrustWorkloadIdentityManager
+metadata:
+  name: cluster
+spec:
+  trustDomain: "<your-apps-domain>"
+  clusterName: "<your-cluster-name>"
+  bundleConfigMap: spire-bundle

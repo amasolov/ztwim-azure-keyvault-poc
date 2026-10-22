@@ -37,8 +37,9 @@ if [ -z "$OIDC_ROUTE" ]; then
 fi
 export JWT_ISSUER_ENDPOINT="$OIDC_ROUTE"
 
-# Get trust domain from SpireServer
-TRUST_DOMAIN=$(oc get spireserver cluster -o jsonpath='{.spec.trustDomain}' 2>/dev/null || echo "")
+# Get trust domain from ZeroTrustWorkloadIdentityManager or SpireServer
+TRUST_DOMAIN=$(oc get zerotrustworkloadidentitymanager cluster -o jsonpath='{.spec.trustDomain}' 2>/dev/null || \
+    oc get spireserver cluster -o jsonpath='{.spec.trustDomain}' 2>/dev/null || echo "")
 if [ -z "$TRUST_DOMAIN" ]; then
     echo "ERROR: Could not determine SPIRE trust domain."
     exit 1

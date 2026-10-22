@@ -1,12 +1,9 @@
 #!/bin/bash
 # Phase 2: Deploy SPIRE components in order:
-#   SpireServer -> SpireAgent -> SpiffeCSIDriver -> SpireOIDCDiscoveryProvider
+#   ZeroTrustWorkloadIdentityManager -> SpireServer -> SpireAgent ->
+#   SpiffeCSIDriver -> SpireOIDCDiscoveryProvider -> ClusterSPIFFEID
 #
 # IMPORTANT: Deploy in this exact order. Each component depends on the previous one.
-#
-# Before running this script, update the YAML files in 02-spire-components/
-# with your actual cluster domain and cluster name. Replace all occurrences of
-# <your-cluster-domain> and <your-cluster-name>.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -16,21 +13,13 @@ NS="zero-trust-workload-identity-manager"
 echo "=== Phase 2: Deploying SPIRE Components ==="
 echo ""
 
-# Validate that placeholders have been replaced
-if grep -q '<your-cluster-domain>' "$BASE_DIR/02-spire-components/01-spire-server.yaml"; then
-    echo "ERROR: Placeholders not replaced in SPIRE component manifests."
-    echo "Edit the files in 02-spire-components/ and replace:"
-    echo "  <your-cluster-domain>  -> your actual cluster apps domain"
-    echo "  <your-cluster-name>    -> your cluster name"
-    echo ""
-    echo "Example:"
-    echo "  sed -i 's/<your-cluster-domain>/mycluster.example.com/g' 02-spire-components/*.yaml"
-    echo "  sed -i 's/<your-cluster-name>/mycluster/g' 02-spire-components/*.yaml"
-    exit 1
-fi
+# Step 0: ZeroTrustWorkloadIdentityManager (parent CR)
+echo "[1/6] Deploying ZeroTrustWorkloadIdentityManager..."
+oc apply -f "$BASE_DIR/02-spire-components/00-trust-manager.yaml"
+sleep 5
 
 # Step 1: SPIRE Server
-echo "[1/5] Deploying SPIRE Server..."
+echo "[2/6] Deploying SPIRE Server..."
 oc apply -f "$BASE_DIR/02-spire-components/01-spire-server.yaml"
 
 echo "  Waiting for SPIRE Server StatefulSet..."
@@ -47,7 +36,7 @@ oc get pods -l app.kubernetes.io/name=spire-server -n "$NS"
 
 # Step 2: SPIRE Agent
 echo ""
-echo "[2/5] Deploying SPIRE Agent..."
+echo "[3/6] Deploying SPIRE Agent..."
 oc apply -f "$BASE_DIR/02-spire-components/02-spire-agent.yaml"
 
 echo "  Waiting for SPIRE Agent DaemonSet..."
@@ -65,7 +54,7 @@ oc get pods -l app.kubernetes.io/name=spire-agent -n "$NS"
 
 # Step 3: SPIFFE CSI Driver
 echo ""
-echo "[3/5] Deploying SPIFFE CSI Driver..."
+echo "[4/6] Deploying SPIFFE CSI Driver..."
 oc apply -f "$BASE_DIR/02-spire-components/03-spiffe-csi-driver.yaml"
 
 echo "  Waiting for SPIFFE CSI Driver DaemonSet..."
@@ -83,13 +72,13 @@ oc get pods -l app.kubernetes.io/name=spiffe-csi-driver -n "$NS"
 
 # Step 4: OIDC Discovery Provider
 echo ""
-echo "[4/5] Deploying SPIRE OIDC Discovery Provider..."
+echo "[5/6] Deploying SPIRE OIDC Discovery Provider..."
 oc apply -f "$BASE_DIR/02-spire-components/04-oidc-discovery-provider.yaml"
 
 echo "  Waiting for OIDC Discovery Provider Deployment..."
 for i in $(seq 1 60); do
-    READY=$(oc get deployment -l app.kubernetes.io/name=spiffe-oidc-discovery-provider -n "$NS" -o jsonpath='{.items[0].status.readyReplicas}' 2>/dev/null || echo "0")
-    if [ "$READY" = "1" ]; then
+    AVAIL=$(oc get deployment -l app.kubernetes.io/name=spiffe-oidc-discovery-provider -n "$NS" -o jsonpath='{.items[0].status.availableReplicas}' 2>/dev/null || echo "0")
+    if [ "$AVAIL" = "1" ]; then
         echo "  OIDC Discovery Provider is ready."
         break
     fi
@@ -100,7 +89,7 @@ oc get pods -l app.kubernetes.io/name=spiffe-oidc-discovery-provider -n "$NS"
 
 # Step 5: ClusterSPIFFEID for auto-registration
 echo ""
-echo "[5/5] Creating ClusterSPIFFEID for demo namespace..."
+echo "[6/6] Creating ClusterSPIFFEID for demo namespace..."
 oc apply -f "$BASE_DIR/02-spire-components/05-cluster-spiffe-id.yaml"
 
 # Verify OIDC endpoint

@@ -4,28 +4,22 @@
 # federation. Entra ID only supports RS256-signed tokens; SPIRE defaults to
 # ES256 which Azure will reject.
 #
-# Set trustDomain to match your cluster's apps domain so the auto-generated
-# OIDC route hostname is correct.
-#
-# >>> Replace <your-cluster-domain> with your actual cluster domain <<<
+# >>> Replace <your-apps-domain> with your cluster's apps domain <<<
 apiVersion: operator.openshift.io/v1alpha1
 kind: SpireServer
 metadata:
   name: cluster
 spec:
-  # Must match your cluster's base apps domain.
-  trustDomain: "apps.<your-cluster-domain>"
-  clusterName: "<your-cluster-name>"
-  jwtIssuer: "https://oidc-discovery.apps.<your-cluster-domain>"
+  jwtIssuer: "https://oidc-discovery.<your-apps-domain>"
   # RS256 is required for Azure Entra ID federation
   jwtKeyType: rsa-2048
-  caBundleConfigMap: spire-bundle
-  replicas: 1
-  controllerManager:
-    # Automatically register workloads via ClusterSPIFFEID CRDs
-    enabled: true
-    ignoreNamespaces:
-      - kube-system
-      - kube-public
-      - openshift-*
-      - zero-trust-workload-identity-manager
+  caSubject:
+    commonName: "SPIRE CA"
+    country: "US"
+    organization: "ZTWIM POC"
+  datastore:
+    databaseType: sqlite3
+    connectionString: "/run/spire/data/datastore.sqlite3"
+  persistence:
+    size: "1Gi"
+    accessMode: ReadWriteOnce

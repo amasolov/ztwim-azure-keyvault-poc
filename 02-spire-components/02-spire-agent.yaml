@@ -1,14 +1,15 @@
 # SPIRE Agent: runs on each node as a DaemonSet, performs node
 # attestation and serves the Workload API to pods.
-#
-# >>> Replace <your-cluster-domain> and <your-cluster-name> <<<
 apiVersion: operator.openshift.io/v1alpha1
 kind: SpireAgent
 metadata:
   name: cluster
 spec:
-  # Must match SpireServer trustDomain
-  trustDomain: "apps.<your-cluster-domain>"
-  clusterName: "<your-cluster-name>"
   # Socket path shared with the SPIFFE CSI Driver
   socketPath: "/run/spire/agent-sockets"
+  # Node attestor using Kubernetes Projected Service Account Tokens
+  nodeAttestor:
+    k8sPSATEnabled: "true"
+  # Workload attestor using Kubernetes API
+  workloadAttestors:
+    k8sEnabled: "true"
