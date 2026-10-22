@@ -1,0 +1,20 @@
+# ClusterSPIFFEID: automatically registers workloads in labeled namespaces
+# with a SPIFFE ID based on their namespace and service account.
+#
+# Any pod in a namespace labeled with "spiffe.io/spire-managed-identity: true"
+# will automatically receive a SPIFFE identity from SPIRE.
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: poc-akv-demo-workloads
+spec:
+  className: "cluster"
+  spiffeIDTemplate: "spiffe://{{ .TrustDomain }}/ns/{{ .PodMeta.Namespace }}/sa/{{ .PodSpec.ServiceAccountName }}"
+  podSelector:
+    matchLabels: {}
+  namespaceSelector:
+    matchLabels:
+      spiffe.io/spire-managed-identity: "true"
+  workloadSelectorTemplates:
+    - "k8s:ns:{{ .PodMeta.Namespace }}"
+    - "k8s:sa:{{ .PodSpec.ServiceAccountName }}"

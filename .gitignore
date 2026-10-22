@@ -1,0 +1,13 @@
+# Environment files with Azure tenant/client IDs
+.env
+
+# Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db

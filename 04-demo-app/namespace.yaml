@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: poc-akv-demo
+  labels:
+    # Required: tells ClusterSPIFFEID to manage identities in this namespace
+    spiffe.io/spire-managed-identity: "true"
