@@ -21,7 +21,7 @@ echo "This will remove:"
 echo "  OpenShift:"
 echo "    - Namespace: $APP_NAMESPACE"
 echo "    - ClusterSPIFFEID: poc-akv-demo-workloads"
-echo "    - SPIRE components (SpireServer, SpireAgent, SpiffeCSIDriver, SpireOIDCDiscoveryProvider)"
+echo "    - SPIRE components (ZeroTrustWorkloadIdentityManager, SpireServer, SpireAgent, SpiffeCSIDriver, SpireOIDCDiscoveryProvider)"
 echo "    - ZTWIM operator subscription"
 echo "    - Namespace: $NS"
 echo "  Azure:"
@@ -48,6 +48,7 @@ oc delete spireoidcdiscoveryprovider cluster --ignore-not-found 2>/dev/null || t
 oc delete spiffecsidriver cluster --ignore-not-found 2>/dev/null || true
 oc delete spireagent cluster --ignore-not-found 2>/dev/null || true
 oc delete spireserver cluster --ignore-not-found 2>/dev/null || true
+oc delete zerotrustworkloadidentitymanager cluster --ignore-not-found 2>/dev/null || true
 
 echo "Deleting ZTWIM operator..."
 oc delete subscription zero-trust-workload-identity-manager -n "$NS" --ignore-not-found 2>/dev/null || true

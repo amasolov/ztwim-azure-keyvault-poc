@@ -31,9 +31,31 @@ oc logs -n zero-trust-workload-identity-manager statefulset/spire-server
 ```
 
 **Common causes:**
-- Invalid `trustDomain` format (must be lowercase alphanumeric, dots, hyphens)
+- Missing required fields: `caSubject`, `datastore`, and `persistence` are all
+  required in ZTWIM v1.1.2
+- Invalid `trustDomain` format on the `ZeroTrustWorkloadIdentityManager` CR
+  (must be lowercase alphanumeric, dots, hyphens)
 - `jwtIssuer` is not a valid URL (must start with `https://`)
-- `caBundleConfigMap` does not exist (it is auto-created, but check timing)
+- `ZeroTrustWorkloadIdentityManager` CR (`cluster`) not created before the
+  SpireServer CR
+
+### SPIRE Agent CrashLoopBackOff: "NodeAttestor constraint not satisfied"
+
+```
+plugin type "NodeAttestor" constraint not satisfied: expected exactly 1 but got 0
+```
+
+ZTWIM v1.1.2 requires explicit attestor configuration on the SpireAgent CR.
+
+**Fix:** Add node and workload attestors to the SpireAgent CR:
+
+```yaml
+spec:
+  nodeAttestor:
+    k8sPSATEnabled: "true"
+  workloadAttestors:
+    k8sEnabled: "true"
+```
 
 ### SPIRE Agent not connecting to server
 
@@ -42,8 +64,9 @@ oc logs -n zero-trust-workload-identity-manager daemonset/spire-agent
 ```
 
 **Common causes:**
-- `trustDomain` mismatch between SpireServer and SpireAgent
-- `clusterName` mismatch between SpireServer and SpireAgent
+- `trustDomain` or `clusterName` mismatch (in ZTWIM v1.1.2, both are set on
+  the `ZeroTrustWorkloadIdentityManager` CR, not on individual SpireServer or
+  SpireAgent CRs)
 - SPIRE Server not yet ready when agent starts (should self-resolve on retry)
 
 ### SPIFFE CSI Driver pods not starting
@@ -71,7 +94,17 @@ oc run curl-test --rm -it --image=registry.access.redhat.com/ubi9/ubi-minimal --
 **Common causes:**
 - `jwtIssuer` mismatch between SpireServer and SpireOIDCDiscoveryProvider
 - SPIRE Server not ready (OIDC provider needs to fetch keys from the server)
-- Route not created (check `managedRoute: true` in the CR)
+- Route not created (check `managedRoute: "true"` in the CR; note this must be
+  a string, not a boolean, or the CRD validation will reject it)
+
+### SpireOIDCDiscoveryProvider CR rejected: "must be of type string"
+
+```
+spec.managedRoute in body must be of type string: "boolean"
+```
+
+The `managedRoute` field must be the string `"true"`, not the boolean `true`.
+Similarly, use `replicaCount` (not `replicas`) for the replica count.
 
 ## Phase 3: Azure Setup
 
@@ -135,7 +168,6 @@ oc exec -n zero-trust-workload-identity-manager spire-server-0 -- \
 **Common causes:**
 - Namespace missing the `spiffe.io/spire-managed-identity: "true"` label
 - ClusterSPIFFEID `namespaceSelector` or `podSelector` does not match
-- SPIRE Controller Manager not enabled in SpireServer CR
 
 ### Azure token exchange fails
 
@@ -200,7 +232,7 @@ az role assignment list --scope <keyvault-resource-id> --output table
 ### View all ZTWIM component statuses
 
 ```bash
-oc get spireserver,spireagent,spiffecsidriver,spireoidcdiscoveryprovider -A
+oc get zerotrustworkloadidentitymanager,spireserver,spireagent,spiffecsidriver,spireoidcdiscoveryprovider -A
 ```
 
 ### Operator and component versions

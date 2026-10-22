@@ -37,7 +37,7 @@ export APP_NAME="keyvault-demo"
 
 The script will automatically read:
 - The **OIDC Discovery Provider route** from the cluster
-- The **trust domain** from the SpireServer CR
+- The **trust domain** from the ZeroTrustWorkloadIdentityManager CR
 - Your Azure **subscription ID** and **tenant ID** from `az account show`
 
 ## Run

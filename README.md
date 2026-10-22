@@ -120,8 +120,9 @@ secrets, no API keys, no long-lived credentials.
 ├── 01-ztwim-operator/
 │   └── subscription.yaml               # OLM Subscription for the operator
 ├── 02-spire-components/
+│   ├── 00-trust-manager.yaml           # ZeroTrustWorkloadIdentityManager CR (trust domain)
 │   ├── 01-spire-server.yaml            # SpireServer CR
-│   ├── 02-spire-agent.yaml             # SpireAgent CR
+│   ├── 02-spire-agent.yaml             # SpireAgent CR (with node/workload attestors)
 │   ├── 03-spiffe-csi-driver.yaml       # SpiffeCSIDriver CR
 │   ├── 04-oidc-discovery-provider.yaml # SpireOIDCDiscoveryProvider CR
 │   └── 05-cluster-spiffe-id.yaml       # ClusterSPIFFEID for auto-registration
@@ -245,6 +246,13 @@ oc exec -it $POD -n poc-akv-demo -- python /opt/app-root/src/list-kv-secrets.py
 ```bash
 ./scripts/99-cleanup.sh   # Removes OpenShift and Azure resources
 ```
+
+## Architecture Deep Dive
+
+For a detailed explanation of the trust model, identity flow, component
+responsibilities, and security properties, see
+[Architecture Overview](docs/architecture-overview.md). This document is
+intended for system architects evaluating this pattern.
 
 ## References
 

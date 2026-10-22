@@ -76,8 +76,8 @@ metadata:
   name: cluster
 spec:
   jwtIssuer: "https://oidc-discovery.apps.<your-cluster-domain>"
-  replicas: 1
-  managedRoute: true
+  replicaCount: 1
+  managedRoute: "true"
   externalSecretRef: "oidc-discovery-tls"
 ```
 
